@@ -88,7 +88,7 @@ class PatientPanel(QWidget):
         """Create the four labelled fields in a single horizontal row."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(16)
+        layout.setSpacing(20)
 
         # Patient name.
         self.name_edit = QLineEdit()

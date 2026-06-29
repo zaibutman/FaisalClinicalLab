@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -26,9 +27,10 @@ from app.widgets.widget_factory import create_widget
 
 logger = logging.getLogger(__name__)
 
-# Fixed shell geometry for Version 0.1.0.
-_WINDOW_WIDTH: int = 1400
-_WINDOW_HEIGHT: int = 850
+# Minimum shell geometry. The window is freely resizable and maximizable
+# above this floor -- it is a minimum, not a fixed size.
+_MIN_WINDOW_WIDTH: int = 1400
+_MIN_WINDOW_HEIGHT: int = 850
 
 
 class MainWindow(QMainWindow):
@@ -49,8 +51,8 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(get_window_title())
-        self.resize(_WINDOW_WIDTH, _WINDOW_HEIGHT)
-        self.setMinimumSize(_WINDOW_WIDTH, _WINDOW_HEIGHT)
+        self.resize(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT)
+        self.setMinimumSize(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT)
 
         self._build_ui()
         logger.info("MainWindow initialized")
@@ -68,10 +70,12 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(self._build_patient_section())
 
         # Middle: Medical Tests (left) + Laboratory Results (center).
+        # 2:5 gives the tests sidebar a little more width than a flat 1:3
+        # while still letting the results area take the remaining space.
         middle_layout = QHBoxLayout()
-        middle_layout.setSpacing(12)
-        middle_layout.addWidget(self._build_tests_section(), stretch=1)
-        middle_layout.addWidget(self._build_results_section(), stretch=3)
+        middle_layout.setSpacing(14)
+        middle_layout.addWidget(self._build_tests_section(), stretch=2)
+        middle_layout.addWidget(self._build_results_section(), stretch=5)
         root_layout.addLayout(middle_layout, stretch=1)
 
         # Bottom: Actions (full width).
@@ -114,8 +118,13 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_actions_section(self) -> QGroupBox:
-        """Build the bottom 'Actions' container (empty for now)."""
+        """Build the bottom 'Actions' container (empty for now).
+
+        Pinned to a fixed height so it never steals vertical space from the
+        results area as the window grows.
+        """
         group = QGroupBox("Actions")
+        group.setFixedHeight(76)
         layout = QHBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
         return group
@@ -151,6 +160,16 @@ class MainWindow(QMainWindow):
         """Remove the result widget for ``test_id`` from the area."""
         self.result_area.remove_widget(test_id)
         logger.info("Removed result widget: %s", test_id)
+
+    def changeEvent(self, event) -> None:  # noqa: N802 (Qt override name)
+        """Log maximize / restore transitions (and nothing noisier)."""
+        if event.type() == QEvent.Type.WindowStateChange:
+            was_maximized = bool(event.oldState() & Qt.WindowState.WindowMaximized)
+            if self.isMaximized() and not was_maximized:
+                logger.info("Window maximized")
+            elif was_maximized and not self.isMaximized() and not self.isMinimized():
+                logger.info("Window restored")
+        super().changeEvent(event)
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt override name)
         """Log a clean shutdown when the window is closed."""

@@ -47,8 +47,8 @@ class BaseTestWidget(QFrame):
         )
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(12, 10, 12, 12)
-        outer.setSpacing(8)
+        outer.setContentsMargins(10, 6, 10, 8)
+        outer.setSpacing(4)
 
         header = QHBoxLayout()
         title = QLabel(test_name)
@@ -73,7 +73,7 @@ class BaseTestWidget(QFrame):
 
         # Subclasses add their fields to this layout.
         self.body_layout = QVBoxLayout()
-        self.body_layout.setSpacing(6)
+        self.body_layout.setSpacing(4)
         outer.addLayout(self.body_layout)
 
     def _on_remove(self) -> None:
