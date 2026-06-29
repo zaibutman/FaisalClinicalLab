@@ -157,6 +157,10 @@ class TestPanel(QWidget):
             return None
         return next((t for t in self._tests if t["id"] == self._selected_id), None)
 
+    def get_test(self, test_id: str) -> dict[str, str] | None:
+        """Return the full definition for ``test_id``, or ``None``."""
+        return next((t for t in self._tests if t["id"] == test_id), None)
+
     def clear_selection(self) -> None:
         """Forget the current selection."""
         self._selected_id = None

@@ -7,7 +7,7 @@
     { "id": "calcium", "name": "Calcium", "category": "Biochemistry", "type": "numeric", "report_heading": "Calcium" },
     { "id": "rbs", "name": "RBS", "category": "Biochemistry", "type": "numeric", "report_heading": "RBS" },
     { "id": "sgpt", "name": "SGPT", "category": "Biochemistry", "type": "numeric", "report_heading": "SGPT" },
-    { "id": "sbr", "name": "SBR", "category": "Biochemistry", "type": "numeric", "report_heading": "SBR" },
+    { "id": "sbr", "name": "SBR", "category": "Biochemistry", "type": "sbr", "report_heading": "SBR" },
     { "id": "uric_acid", "name": "Uric Acid", "category": "Biochemistry", "type": "numeric", "report_heading": "Uric Acid" },
     { "id": "cholesterol", "name": "Cholesterol", "category": "Biochemistry", "type": "numeric", "report_heading": "Cholesterol" },
     { "id": "triglycerides", "name": "Triglycerides", "category": "Biochemistry", "type": "numeric", "report_heading": "Triglycerides" },

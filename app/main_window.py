@@ -10,19 +10,19 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QVBoxLayout,
     QWidget,
 )
 
 from app.patient_panel import PatientPanel
+from app.result_panel import ResultArea
 from app.test_panel import TestPanel
 from app.version import get_window_title
+from app.widgets.widget_factory import create_widget
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,9 @@ class MainWindow(QMainWindow):
         # Bottom: Actions (full width).
         root_layout.addWidget(self._build_actions_section())
 
+        # Wire test selection -> result widget insertion.
+        self.test_panel.test_selected.connect(self._on_test_selected)
+
     def _build_patient_section(self) -> QGroupBox:
         """Build the top 'Patient Information' container hosting PatientPanel."""
         group = QGroupBox("Patient Information")
@@ -100,17 +103,13 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_results_section(self) -> QGroupBox:
-        """Build the center 'Laboratory Results' container.
-
-        Shows a placeholder label until tests are added in a later task.
-        """
+        """Build the center 'Laboratory Results' container hosting ResultArea."""
         group = QGroupBox("Laboratory Results")
         layout = QVBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
 
-        placeholder = QLabel("No tests added.")
-        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(placeholder)
+        self.result_area = ResultArea(group)
+        layout.addWidget(self.result_area)
 
         return group
 
@@ -120,6 +119,38 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
         return group
+
+    def _on_test_selected(self, test_id: str) -> None:
+        """Create and insert a result widget for the clicked test.
+
+        Duplicate clicks (a widget for this test already exists) and tests
+        with no widget yet (e.g. packages) are ignored.
+        """
+        if self.result_area.contains(test_id):
+            logger.info("Duplicate test click ignored: %s", test_id)
+            return
+
+        definition = self.test_panel.get_test(test_id)
+        if definition is None:
+            logger.warning("No definition found for test id: %s", test_id)
+            return
+
+        widget = create_widget(definition)
+        if widget is None:
+            logger.info(
+                "No widget for type '%s' (test %s); skipped",
+                definition.get("type"), test_id,
+            )
+            return
+
+        widget.removed.connect(self._on_widget_removed)
+        self.result_area.add_widget(widget)
+        logger.info("Added result widget: %s", test_id)
+
+    def _on_widget_removed(self, test_id: str) -> None:
+        """Remove the result widget for ``test_id`` from the area."""
+        self.result_area.remove_widget(test_id)
+        logger.info("Removed result widget: %s", test_id)
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt override name)
         """Log a clean shutdown when the window is closed."""
