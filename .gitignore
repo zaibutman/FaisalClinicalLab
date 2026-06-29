@@ -1,3 +1,35 @@
-__pycache__/
-*.pyc
+# ── Virtual environment ──
+.venv/
 venv/
+env/
+
+# ── Python bytecode / caches ──
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ── Packaging / build artifacts ──
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── Test / type / lint caches ──
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── IDE / editor ──
+.vscode/
+.idea/
+*.swp
+
+# ── OS cruft ──
+Thumbs.db
+.DS_Store
+
+# ── Application runtime output (keep the folders, ignore contents) ──
+logs/*
+reports/*
+!logs/.gitkeep
+!reports/.gitkeep
