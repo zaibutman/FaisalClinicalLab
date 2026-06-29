@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.patient_panel import PatientPanel
+from app.test_panel import TestPanel
 from app.version import get_window_title
 
 logger = logging.getLogger(__name__)
@@ -88,10 +89,14 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_tests_section(self) -> QGroupBox:
-        """Build the left 'Medical Tests' container (empty for now)."""
+        """Build the left 'Medical Tests' container hosting TestPanel."""
         group = QGroupBox("Medical Tests")
         layout = QVBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
+
+        self.test_panel = TestPanel(group)
+        layout.addWidget(self.test_panel)
+
         return group
 
     def _build_results_section(self) -> QGroupBox:
