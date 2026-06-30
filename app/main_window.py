@@ -14,9 +14,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
+    QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QMainWindow,
+    QMessageBox,
     QVBoxLayout,
     QWidget,
 )
@@ -27,6 +29,7 @@ from app.engine.medical_knowledge import MedicalKnowledge
 from app.engine.package_resolver import PackageResolver
 from app.engine.reference_engine import ReferenceEngine
 from app.engine.report_builder import ReportBuilder
+from app.engine.report_storage import ReportStorage
 from app.engine.settings_manager import SettingsManager
 from app.patient_panel import PatientPanel
 from app.printing.pdf_generator import PDFGenerator
@@ -105,6 +108,8 @@ class MainWindow(QMainWindow):
             self._medical_knowledge,
             self._reference_engine,
         )
+        # Persists a LabReport to disk as JSON (Task 012A).
+        self._report_storage = ReportStorage()
 
         # Wire test selection -> result widget insertion.
         self.test_panel.test_selected.connect(self._on_test_selected)
@@ -263,6 +268,55 @@ class MainWindow(QMainWindow):
             tmp_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+    def save_report(self) -> Path | None:
+        """Build the current report and save it to disk as JSON.
+
+        Reuses :meth:`build_report` and the existing :class:`ReportStorage`
+        (which delegates to ``LabReport.to_json``). Opens a Save dialog
+        defaulting to ``reports/`` with a generated filename. Returns the
+        written path, or ``None`` if the user cancels. Never raises -- any
+        filesystem error is reported via a message box.
+        """
+        report = self.build_report()
+
+        default_dir = self._report_storage.reports_dir
+        default_dir.mkdir(parents=True, exist_ok=True)
+        default_name = self._report_storage.create_filename(report)
+        default_path = str(default_dir / default_name)
+
+        logger.info("Save dialog opened")
+        selected, _filter = QFileDialog.getSaveFileName(
+            self, "Save Report", default_path, "JSON Files (*.json)"
+        )
+        if not selected:
+            logger.info("Save cancelled")
+            return None
+
+        path = Path(selected)
+        if path.suffix.lower() != ".json":
+            path = path.with_suffix(".json")
+
+        try:
+            saved = self._report_storage.save(report, path)
+        except (PermissionError, OSError) as exc:
+            logger.warning("Save failed: %s", exc)
+            QMessageBox.critical(
+                self, "Save Report", f"The report could not be saved:\n{exc}"
+            )
+            return None
+        except Exception as exc:  # never crash on an unexpected error
+            logger.warning("Save failed: %s", exc)
+            QMessageBox.critical(
+                self, "Save Report", f"An unexpected error occurred:\n{exc}"
+            )
+            return None
+
+        logger.info("Report saved: %s", saved.name)
+        QMessageBox.information(
+            self, "Save Report", f"Report saved successfully:\n{saved}"
+        )
+        return saved
 
     def _on_widget_removed(self, test_id: str) -> None:
         """Remove the result widget for ``test_id`` from the area."""
