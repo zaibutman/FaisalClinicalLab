@@ -19,7 +19,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.engine.lab_report import LabReport
+from app.engine.medical_knowledge import MedicalKnowledge
 from app.engine.package_resolver import PackageResolver
+from app.engine.reference_engine import ReferenceEngine
+from app.engine.report_builder import ReportBuilder
+from app.engine.settings_manager import SettingsManager
 from app.patient_panel import PatientPanel
 from app.result_panel import ResultArea
 from app.test_panel import TestPanel
@@ -84,6 +89,18 @@ class MainWindow(QMainWindow):
 
         # Resolves package ids -> ordered member test ids (Task 008).
         self._package_resolver = PackageResolver()
+
+        # Business-layer collaborators for assembling a LabReport (Task 010).
+        # MedicalKnowledge is shared with the ReferenceEngine so both read the
+        # same loaded catalog.
+        self._settings_manager = SettingsManager()
+        self._medical_knowledge = MedicalKnowledge()
+        self._reference_engine = ReferenceEngine(self._medical_knowledge)
+        self._report_builder = ReportBuilder(
+            self._settings_manager,
+            self._medical_knowledge,
+            self._reference_engine,
+        )
 
         # Wire test selection -> result widget insertion.
         self.test_panel.test_selected.connect(self._on_test_selected)
@@ -190,6 +207,20 @@ class MainWindow(QMainWindow):
 
         widget.removed.connect(self._on_widget_removed)
         return self.result_area.add_widget(widget)
+
+    def build_report(self) -> LabReport:
+        """Assemble a :class:`LabReport` from the current application state.
+
+        Collects the patient fields and the live result widgets (in display
+        order) and hands them to the :class:`ReportBuilder`. This method only
+        builds and returns the report object -- it shows no dialogs and does
+        no printing or saving (Task 010).
+        """
+        patient_data = self.patient_panel.get_patient_data()
+        # ResultArea exposes no public iterator yet; read its insertion-ordered
+        # map directly to preserve the order tests were added in.
+        result_widgets = list(self.result_area._widgets.values())
+        return self._report_builder.build(patient_data, result_widgets)
 
     def _on_widget_removed(self, test_id: str) -> None:
         """Remove the result widget for ``test_id`` from the area."""
