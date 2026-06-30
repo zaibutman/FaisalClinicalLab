@@ -230,8 +230,106 @@ class ReportPreviewDialog(QDialog):
     # ── Button handlers ───────────────────────────────────────────────
 
     def _on_print(self) -> None:
-        """Emit :attr:`print_requested` -- the dialog prints nothing itself."""
+        """Print the currently previewed PDF via the native print dialog.
+
+        Notifies listeners via :attr:`print_requested` (the public signal is
+        retained) and then prints the *already loaded* document -- it never
+        rebuilds the report or regenerates the PDF.
+        """
         self.print_requested.emit()
+        self._print_document()
+
+    def _print_document(self) -> None:
+        """Open the native print dialog and print the loaded PDF document.
+
+        Reuses the QtPdf document already shown in the preview. Cancelling is
+        silent; an unavailable printer or a print failure raises no exception
+        -- a :class:`QMessageBox` warning is shown instead.
+        """
+        try:
+            from PySide6.QtPrintSupport import (
+                QPrintDialog,
+                QPrinter,
+                QPrinterInfo,
+            )
+        except Exception:
+            self._warn("Printing is not supported on this system.")
+            return
+
+        # Only the native QtPdf backend exposes a rendered document to print.
+        if (
+            self._backend != "qtpdf"
+            or self._doc is None
+            or self._doc.status() != self._QPdfDocument.Status.Ready
+            or self._doc.pageCount() < 1
+        ):
+            self._warn("There is no document available to print.")
+            return
+
+        if not QPrinterInfo.availablePrinterNames():
+            self._warn("No printer is available on this system.")
+            return
+
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        dialog = QPrintDialog(printer, self)
+        dialog.setWindowTitle("Print Report")
+
+        logger.info("Print dialog opened")
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            logger.info("Printing cancelled")
+            return
+
+        try:
+            logger.info("Printing started")
+            self._render_document_to_printer(printer)
+            logger.info("Printing completed")
+        except Exception as exc:
+            logger.warning("Printing failed: %s", exc)
+            self._warn(f"Printing failed:\n{exc}")
+
+    def _render_document_to_printer(self, printer) -> None:
+        """Paint every page of the loaded document onto ``printer``.
+
+        Each PDF page is rendered to an image sized to the printer resolution
+        and scaled to fit the printable area while preserving aspect ratio.
+        """
+        from PySide6.QtCore import QSize
+        from PySide6.QtGui import QPainter
+
+        painter = QPainter()
+        if not painter.begin(printer):
+            raise RuntimeError("Could not start the print job.")
+        try:
+            resolution = printer.resolution()
+            layout = printer.pageLayout()
+            for index in range(self._doc.pageCount()):
+                if index > 0 and not printer.newPage():
+                    raise RuntimeError("Could not advance to the next page.")
+
+                paint_rect = layout.paintRectPixels(resolution)
+                point_size = self._doc.pagePointSize(index)
+                native_w = point_size.width() / 72.0 * resolution
+                native_h = point_size.height() / 72.0 * resolution
+                if native_w <= 0 or native_h <= 0:
+                    continue
+
+                scale = min(paint_rect.width() / native_w,
+                            paint_rect.height() / native_h)
+                img_w = max(1, round(native_w * scale))
+                img_h = max(1, round(native_h * scale))
+
+                image = self._doc.render(index, QSize(img_w, img_h))
+                if image.isNull():
+                    continue
+                painter.drawImage(paint_rect.x(), paint_rect.y(), image)
+        finally:
+            painter.end()
+
+    def _warn(self, message: str) -> None:
+        """Show a non-fatal printing warning dialog."""
+        from PySide6.QtWidgets import QMessageBox
+
+        QMessageBox.warning(self, "Printing", message)
 
     def _on_save(self) -> None:
         """Emit :attr:`save_requested` -- the dialog saves nothing itself."""
