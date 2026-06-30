@@ -1,0 +1,348 @@
+{
+    "_meta": {
+        "source": "docs/Master Test Catalog.docx",
+        "note": "Every medical value (unit, reference_range, dropdown_options, cbc_fields, urine_fields, semen_fields, packages) is copied verbatim from the Master Test Catalog. Structural fields (id, name, category, report_heading, widget_type) are taken from data/tests.json. reference_range stores every distinct string the catalog shows for a test; source typos and original spacing/dash runs are preserved intentionally.",
+        "version": "0.8.0"
+    },
+    "tests": {
+        "cbc": {
+            "id": "cbc",
+            "name": "CBC",
+            "category": "Hematology",
+            "report_heading": "BLOOD COMPLETE PICTURE",
+            "widget_type": "cbc",
+            "remarks": "Catalog provides no separate unit column for CBC; units are embedded inline within each Exp.Value string.",
+            "cbc_fields": [
+                { "name": "Hemoglobin", "reference_range": ["F   : 12 --- 16", "M : 14 --- 18"] },
+                { "name": "TLC", "reference_range": ["4000 ---  11000 /cmm"] },
+                { "name": "Neutrophils", "reference_range": ["40 ---  60   %"] },
+                { "name": "Lymphocytes", "reference_range": ["20 ---  40   %"] },
+                { "name": "Monocytes", "reference_range": ["04 ---  08   %"] },
+                { "name": "Eosinophil’s", "reference_range": ["01 ---  03   %"] },
+                { "name": "RBC", "reference_range": ["M : 4.7 to 6.1 mcL", "F  : 4.2 to  5.4 mcL"] },
+                { "name": "HCT", "reference_range": ["M:  41 %  TO  50 %", "F :   36 %  TO  48 %"] },
+                { "name": "MCV", "reference_range": ["80 ---  96 fL/red cell"] },
+                { "name": "MCH", "reference_range": ["27 ---  33 pg/cell"] },
+                { "name": "MCHC", "reference_range": ["33 ---  36 g/dl"] },
+                { "name": "Platelets Count", "reference_range": ["150000 to 450000 /cmm"] }
+            ]
+        },
+        "blood_group": {
+            "id": "blood_group",
+            "name": "Blood Group",
+            "category": "Hematology",
+            "report_heading": "BLOOD GROUP",
+            "widget_type": "blood_group",
+            "remarks": "Catalog shows two sub-fields: BLOOD GROUP (sample value “A”) and Rh FACTOR (sample value POSITIVE). The catalog does not enumerate the full blood-group or Rh option sets, so dropdown_options is intentionally omitted (not fabricated)."
+        },
+        "esr": {
+            "id": "esr",
+            "name": "ESR",
+            "category": "Hematology",
+            "report_heading": "ESR",
+            "widget_type": "numeric",
+            "unit": "mm/hr",
+            "reference_range": ["05 ----------- 20  mm/hr"]
+        },
+        "mp": {
+            "id": "mp",
+            "name": "MP",
+            "category": "Hematology",
+            "report_heading": "MP",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NO MP SEEN"],
+            "remarks": "Catalog shows only the result 'NO MP SEEN'; no alternative option is enumerated, so the option set may be incomplete."
+        },
+        "calcium": {
+            "id": "calcium",
+            "name": "Calcium",
+            "category": "Biochemistry",
+            "report_heading": "Calcium",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": ["8.6--------10.3  mg/dl"]
+        },
+        "rbs": {
+            "id": "rbs",
+            "name": "RBS",
+            "category": "Biochemistry",
+            "report_heading": "RBS",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "80-------140 mg/dl",
+                "80-------------140  mg/dl",
+                "80----------140mg/dl",
+                "80 ------ 140 mg/dl",
+                "R:80-------140mg/dl F:70-------110mg/dl"
+            ],
+            "remarks": "The last range is the combined Random/Fasting string shown for 'B.SUGAR' in the Lab. Room Tests report."
+        },
+        "sgpt": {
+            "id": "sgpt",
+            "name": "SGPT",
+            "category": "Biochemistry",
+            "report_heading": "SGPT",
+            "widget_type": "numeric",
+            "unit": "U/L",
+            "reference_range": [
+                "10-----------40   U/L",
+                "10----------------40U/L",
+                "UP TO 40 U/L",
+                "10 – 40 U/L"
+            ]
+        },
+        "sbr": {
+            "id": "sbr",
+            "name": "SBR",
+            "category": "Biochemistry",
+            "report_heading": "SBR",
+            "widget_type": "sbr",
+            "unit": "mg/dl",
+            "reference_range": {
+                "SBR(TOTAL)": ["0.3-------1.0  mg/dl", "UPTO   1.0", "0.3 – 1.0 mg/dl"],
+                "SBR(DIRECT)": ["Iess than 0.3  mg/dl", "Less than 0.3 mg/dl"],
+                "SBR(INDIRECT)": ["0.2--------0.8  mg/dl", "0.2 – 0.8 mg/dl"]
+            },
+            "remarks": "SBR is a single widget covering three components (Total, Direct, Indirect). Each component's distinct catalog ranges are preserved exactly, including the source typo 'Iess than'."
+        },
+        "uric_acid": {
+            "id": "uric_acid",
+            "name": "Uric Acid",
+            "category": "Biochemistry",
+            "report_heading": "Uric Acid",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "Male     3.0-------6.8 mg/dl  Female 3.0-------5.7 mg/dl",
+                "M: 3.0 --- 7.0 mg/dl",
+                "F: 3.0 --- 5.7 mg/dl",
+                "Male: 3.0–6.8 mg/dl Female: 3.0–5.7 mg/dl"
+            ],
+            "remarks": "Catalog is internally inconsistent on the male upper bound (6.8 in the RFT'S & LFT'S and summary tables, 7.0 in the standalone Uric Acid table); both are preserved verbatim."
+        },
+        "cholesterol": {
+            "id": "cholesterol",
+            "name": "Cholesterol",
+            "category": "Biochemistry",
+            "report_heading": "Cholesterol",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "150----------200  mg/dl",
+                "150-----------200 mg/dl"
+            ]
+        },
+        "triglycerides": {
+            "id": "triglycerides",
+            "name": "Triglycerides",
+            "category": "Biochemistry",
+            "report_heading": "Triglycerides",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "150-----------200  mg/dl",
+                "150--------200mg/dl"
+            ]
+        },
+        "hdl": {
+            "id": "hdl",
+            "name": "HDL",
+            "category": "Biochemistry",
+            "report_heading": "HDL",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "More Than  35   mg/dl",
+                "More Than 35 mg/dl"
+            ]
+        },
+        "ldl": {
+            "id": "ldl",
+            "name": "LDL",
+            "category": "Biochemistry",
+            "report_heading": "LDL",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "LessThan    150   mg/dl",
+                "Less Than 150 mg/dl"
+            ]
+        },
+        "urea": {
+            "id": "urea",
+            "name": "Urea",
+            "category": "Biochemistry",
+            "report_heading": "Urea",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "10------------40 mg/dl",
+                "10 – 40 mg/dl"
+            ]
+        },
+        "creatinine": {
+            "id": "creatinine",
+            "name": "Creatinine",
+            "category": "Biochemistry",
+            "report_heading": "Creatinine",
+            "widget_type": "numeric",
+            "unit": "mg/dl",
+            "reference_range": [
+                "0.3----------1.3  mg/dl",
+                "0.3 – 1.3 mg/dl"
+            ]
+        },
+        "alp": {
+            "id": "alp",
+            "name": "ALP",
+            "category": "Biochemistry",
+            "report_heading": "ALP",
+            "widget_type": "numeric",
+            "unit": "U/L",
+            "reference_range": [
+                "65-------------306  U/L",
+                "65 – 306 U/L"
+            ]
+        },
+        "dengue": {
+            "id": "dengue",
+            "name": "Dengue",
+            "category": "Serology",
+            "report_heading": "Dengue",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NEGATVE", "NEGATIVE"],
+            "remarks": "Catalog lists Dengue as three sub-components — DENGUE NS1 (sample 'NEGATVE', a source typo), IgG ('NEGATIVE'), IgM ('NEGATIVE'). Only observed values are stored; the option set may be incomplete."
+        },
+        "h_pylori": {
+            "id": "h_pylori",
+            "name": "H.Pylori ICT",
+            "category": "Serology",
+            "report_heading": "H.Pylori ICT",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NON REACTIVE"],
+            "remarks": "Catalog shows only 'NON REACTIVE' (as H.PYLORI Abs / H.PYLORI(ICT)); no alternative option is enumerated, so the option set may be incomplete."
+        },
+        "hcv": {
+            "id": "hcv",
+            "name": "HCV",
+            "category": "Serology",
+            "report_heading": "HCV",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NON REACTIVE"],
+            "remarks": "Catalog shows only 'NON REACTIVE' for HCV(ICT); option set may be incomplete."
+        },
+        "hbsag": {
+            "id": "hbsag",
+            "name": "HBsAg",
+            "category": "Serology",
+            "report_heading": "HBsAg",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NON REACTIVE"],
+            "remarks": "Catalog shows only 'NON REACTIVE' for HBS Ag(ICT); option set may be incomplete."
+        },
+        "hiv": {
+            "id": "hiv",
+            "name": "HIV",
+            "category": "Serology",
+            "report_heading": "HIV",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NON REACTIVE"],
+            "remarks": "Catalog shows only 'NON REACTIVE' for HIV(ICT); option set may be incomplete."
+        },
+        "syphilis": {
+            "id": "syphilis",
+            "name": "Syphilis",
+            "category": "Serology",
+            "report_heading": "Syphilis",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NON REACTIVE"],
+            "remarks": "Catalog shows only 'NON REACTIVE' for SYPHILIS(ICT); option set may be incomplete."
+        },
+        "tb": {
+            "id": "tb",
+            "name": "TB",
+            "category": "Serology",
+            "report_heading": "TB",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NEGATIVE"],
+            "remarks": "Catalog lists TB (ICT) with sub-components IgG ('NEGATIVE') and IgM ('NEGATIVE'). Only observed values are stored; option set may be incomplete."
+        },
+        "pregnancy": {
+            "id": "pregnancy",
+            "name": "Pregnancy",
+            "category": "Serology",
+            "report_heading": "Pregnancy",
+            "widget_type": "dropdown",
+            "dropdown_options": ["NEGATIVE", "POSITIVE"],
+            "remarks": "Catalog enumerates PREGNANCY(ICT) as 'NEGATIVE/POSITIVE'."
+        },
+        "urine_re": {
+            "id": "urine_re",
+            "name": "Urine R/E",
+            "category": "Urine",
+            "report_heading": "URINE ANALYSIS",
+            "widget_type": "urine",
+            "remarks": "Values shown are the catalog's sample report text, copied verbatim. A second urine table in the catalog shows 'Epth Cells : ( NIL )' instead of '( 03 ------- 04 )'.",
+            "urine_fields": [
+                { "section": "Physical Examination", "field": "Colour : P.Yellow" },
+                { "section": "Physical Examination", "field": "Volume :  20 ml" },
+                { "section": "Chemical Examination", "field": "Sugar : ( NIL )" },
+                { "section": "Chemical Examination", "field": "Albumin : (NIL)" },
+                { "section": "Chemical Examination", "field": "PH : Acidic" },
+                { "section": "Microscopic Examination", "field": "Pus Cells :  ( 02…………03 )" },
+                { "section": "Microscopic Examination", "field": "Rbcs :          ( 00 ------- 01 )" },
+                { "section": "Microscopic Examination", "field": "Epth Cells : ( 03 ------- 04 )" },
+                { "section": "Microscopic Examination", "field": "C.Oxalate : (NIL)" },
+                { "section": "Microscopic Examination", "field": "M.Thread : (NIL)" },
+                { "section": "Microscopic Examination", "field": "Bacteria:     (NIL)" }
+            ]
+        },
+        "semen": {
+            "id": "semen",
+            "name": "Semen",
+            "category": "Semen",
+            "report_heading": "SEMEN ANALYSIS",
+            "widget_type": "semen",
+            "remarks": "Physical-exam values are catalog sample results; Total count, Pus cells and Rbc,s carry catalog N.VALUE ranges. MOTILITY and MORPHOLOGY sub-parameters carry the '%' column but no reference range in the catalog.",
+            "semen_fields": [
+                { "section": "PHYSICAL EXAM", "name": "Colour" },
+                { "section": "PHYSICAL EXAM", "name": "PH" },
+                { "section": "PHYSICAL EXAM", "name": "VISCOSITY" },
+                { "section": "PHYSICAL EXAM", "name": "Volume" },
+                { "section": "MICROSCOPY", "name": "Total count", "reference_range": "60 ----- 120  mil/ml" },
+                { "section": "MICROSCOPY", "name": "MOTILITY", "subfields": ["Active", "Sluggish", "Dead"], "unit": "%" },
+                { "section": "MICROSCOPY", "name": "MORPHOLOGY", "subfields": ["Normal", "Abnormal"], "unit": "%" },
+                { "section": "MICROSCOPY", "name": "Pus  cells", "reference_range": "06----------08" },
+                { "section": "MICROSCOPY", "name": "Rbc,s", "reference_range": "02----------03" }
+            ]
+        }
+    },
+    "packages": {
+        "lipid_profile": {
+            "id": "lipid_profile",
+            "catalog_name": "Lip. Profile",
+            "members": ["sgpt", "rbs", "cholesterol", "triglycerides", "hdl", "ldl", "h_pylori", "mp", "hcv", "hbsag"]
+        },
+        "medical_tests": {
+            "id": "medical_tests",
+            "catalog_name": "Medical Tests",
+            "members": ["sgpt", "sbr", "rbs", "hiv", "syphilis", "hcv", "hbsag"]
+        },
+        "lft": {
+            "id": "lft",
+            "catalog_name": "LFT’s",
+            "members": ["sgpt", "sbr", "mp"]
+        },
+        "rft_lft": {
+            "id": "rft_lft",
+            "catalog_name": "RFT'S & LFT'S",
+            "members": ["urea", "creatinine", "uric_acid", "sgpt", "sbr", "alp", "h_pylori"]
+        },
+        "vh": {
+            "id": "vh",
+            "catalog_name": "VH",
+            "members": ["sgpt", "sbr", "rbs", "h_pylori", "mp"]
+        }
+    }
+}
