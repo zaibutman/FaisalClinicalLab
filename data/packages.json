@@ -1,1 +1,34 @@
-{}
+{
+    "lipid_profile": [
+        "cholesterol",
+        "triglycerides",
+        "hdl",
+        "ldl"
+    ],
+    "medical_tests": [
+        "cbc",
+        "blood_group",
+        "rbs",
+        "hbsag",
+        "hcv",
+        "hiv",
+        "urine_re"
+    ],
+    "vh": [
+        "hbsag",
+        "hcv"
+    ],
+    "rft_lft": [
+        "urea",
+        "creatinine",
+        "uric_acid",
+        "sgpt",
+        "sbr",
+        "alp"
+    ],
+    "lft": [
+        "sgpt",
+        "sbr",
+        "alp"
+    ]
+}

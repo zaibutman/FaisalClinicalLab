@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.engine.package_resolver import PackageResolver
 from app.patient_panel import PatientPanel
 from app.result_panel import ResultArea
 from app.test_panel import TestPanel
@@ -81,6 +82,9 @@ class MainWindow(QMainWindow):
         # Bottom: Actions (full width).
         root_layout.addWidget(self._build_actions_section())
 
+        # Resolves package ids -> ordered member test ids (Task 008).
+        self._package_resolver = PackageResolver()
+
         # Wire test selection -> result widget insertion.
         self.test_panel.test_selected.connect(self._on_test_selected)
 
@@ -130,19 +134,51 @@ class MainWindow(QMainWindow):
         return group
 
     def _on_test_selected(self, test_id: str) -> None:
-        """Create and insert a result widget for the clicked test.
+        """Handle a sidebar click: add a single test, or expand a package.
 
-        Duplicate clicks (a widget for this test already exists) and tests
-        with no widget yet (e.g. packages) are ignored.
+        A package click resolves to its member tests and adds a widget for
+        each one that is not already present (Task 008). A single-test click
+        keeps the prior behavior: duplicate clicks are ignored and tests
+        with no widget (unknown types) are skipped.
         """
-        if self.result_area.contains(test_id):
-            logger.info("Duplicate test click ignored: %s", test_id)
-            return
-
         definition = self.test_panel.get_test(test_id)
         if definition is None:
             logger.warning("No definition found for test id: %s", test_id)
             return
+
+        if definition.get("type") == "package":
+            self._on_package_selected(test_id)
+            return
+
+        if self.result_area.contains(test_id):
+            logger.info("Duplicate test click ignored: %s", test_id)
+            return
+        if self._add_widget_for(test_id):
+            logger.info("Added result widget: %s", test_id)
+
+    def _on_package_selected(self, package_id: str) -> None:
+        """Resolve ``package_id`` and add a widget for each missing member.
+
+        Existing widgets are never duplicated and package order is preserved.
+        Individual widget creation is intentionally not logged here.
+        """
+        member_ids = self._package_resolver.resolve(package_id)
+        for member_id in member_ids:
+            if not self.result_area.contains(member_id):
+                self._add_widget_for(member_id)
+        logger.info("Package added: %s (%d test(s))", package_id, len(member_ids))
+
+    def _add_widget_for(self, test_id: str) -> bool:
+        """Create and insert the result widget for ``test_id``.
+
+        Returns True if a widget was added. Returns False when the test has
+        no definition or no widget for its type. Duplicate suppression is the
+        caller's responsibility.
+        """
+        definition = self.test_panel.get_test(test_id)
+        if definition is None:
+            logger.warning("No definition found for test id: %s", test_id)
+            return False
 
         widget = create_widget(definition)
         if widget is None:
@@ -150,11 +186,10 @@ class MainWindow(QMainWindow):
                 "No widget for type '%s' (test %s); skipped",
                 definition.get("type"), test_id,
             )
-            return
+            return False
 
         widget.removed.connect(self._on_widget_removed)
-        self.result_area.add_widget(widget)
-        logger.info("Added result widget: %s", test_id)
+        return self.result_area.add_widget(widget)
 
     def _on_widget_removed(self, test_id: str) -> None:
         """Remove the result widget for ``test_id`` from the area."""
