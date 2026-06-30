@@ -9,6 +9,8 @@ behavior is implemented at this stage (Version 0.1.0).
 from __future__ import annotations
 
 import logging
+import tempfile
+from pathlib import Path
 
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
@@ -19,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.dialogs.report_preview_dialog import ReportPreviewDialog
 from app.engine.lab_report import LabReport
 from app.engine.medical_knowledge import MedicalKnowledge
 from app.engine.package_resolver import PackageResolver
@@ -26,6 +29,7 @@ from app.engine.reference_engine import ReferenceEngine
 from app.engine.report_builder import ReportBuilder
 from app.engine.settings_manager import SettingsManager
 from app.patient_panel import PatientPanel
+from app.printing.pdf_generator import PDFGenerator
 from app.result_panel import ResultArea
 from app.test_panel import TestPanel
 from app.version import get_window_title
@@ -221,6 +225,44 @@ class MainWindow(QMainWindow):
         # map directly to preserve the order tests were added in.
         result_widgets = list(self.result_area._widgets.values())
         return self._report_builder.build(patient_data, result_widgets)
+
+    def preview_report(self) -> None:
+        """Build the current report, render it to a temp PDF, and preview it.
+
+        Reuses :meth:`build_report` and the existing :class:`PDFGenerator`. The
+        PDF is written to a private temporary file that is deleted once the
+        preview dialog closes -- no orphan files are left behind. This method
+        opens no save or print dialogs; the dialog's Print/Save buttons only
+        emit signals (Task 011B).
+        """
+        tmp_path: Path | None = None
+        try:
+            report = self.build_report()
+
+            handle = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+            handle.close()
+            tmp_path = Path(handle.name)
+
+            PDFGenerator(self._settings_manager).generate(report, tmp_path)
+
+            logger.info("Preview opened")
+            dialog = ReportPreviewDialog(tmp_path, self)
+            dialog.exec()
+            logger.info("Preview closed")
+        except Exception as exc:
+            logger.warning("Preview failed: %s", exc)
+        finally:
+            self._delete_temp_pdf(tmp_path)
+
+    @staticmethod
+    def _delete_temp_pdf(tmp_path: Path | None) -> None:
+        """Remove the temporary preview PDF, ignoring any failure."""
+        if tmp_path is None:
+            return
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
 
     def _on_widget_removed(self, test_id: str) -> None:
         """Remove the result widget for ``test_id`` from the area."""
