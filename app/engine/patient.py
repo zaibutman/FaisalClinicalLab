@@ -13,6 +13,8 @@ class PatientInfo:
     gender: str
     doctor: str
     date: str
+    age: str = ""
+    phone: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -20,6 +22,8 @@ class PatientInfo:
             "gender": self.gender,
             "doctor": self.doctor,
             "date": self.date,
+            "age": self.age,
+            "phone": self.phone,
         }
 
     @classmethod
@@ -29,4 +33,6 @@ class PatientInfo:
             gender=data.get("gender", ""),
             doctor=data.get("doctor", ""),
             date=data.get("date", ""),
+            age=data.get("age", ""),
+            phone=data.get("phone", ""),
         )

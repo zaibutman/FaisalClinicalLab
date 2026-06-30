@@ -14,6 +14,10 @@ class TestResult:
     test_name: str
     test_type: str
     result: Any
+    unit: str = ""
+    reference_range: str = ""
+    flag: str = ""
+    comment: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -21,6 +25,10 @@ class TestResult:
             "test_name": self.test_name,
             "test_type": self.test_type,
             "result": self.result,
+            "unit": self.unit,
+            "reference_range": self.reference_range,
+            "flag": self.flag,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -30,4 +38,8 @@ class TestResult:
             test_name=data.get("test_name", ""),
             test_type=data.get("test_type", ""),
             result=data.get("result"),
+            unit=data.get("unit", ""),
+            reference_range=data.get("reference_range", ""),
+            flag=data.get("flag", ""),
+            comment=data.get("comment", ""),
         )

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.engine.laboratory import LaboratoryInfo
 from app.engine.patient import PatientInfo
@@ -37,3 +39,17 @@ class LabReport:
                 TestResult.from_dict(t) for t in data.get("test_results", [])
             ],
         )
+
+    def to_json(self, filepath) -> None:
+        """Serialize this report to a JSON file (UTF-8, indented)."""
+        path = Path(filepath)
+        with path.open("w", encoding="utf-8") as fh:
+            json.dump(self.to_dict(), fh, indent=4, ensure_ascii=False)
+
+    @classmethod
+    def from_json(cls, filepath) -> LabReport:
+        """Load a report from a JSON file (UTF-8)."""
+        path = Path(filepath)
+        with path.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return cls.from_dict(data)
