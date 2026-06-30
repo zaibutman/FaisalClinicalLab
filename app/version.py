@@ -5,7 +5,7 @@ Imported wherever the title or version needs to be displayed.
 """
 
 APP_NAME: str = "Faisal Clinical Laboratory"
-APP_VERSION: str = "0.8.0"
+APP_VERSION: str = "0.9.0"
 APP_AUTHOR: str = "Zaib Utman"
 
 
