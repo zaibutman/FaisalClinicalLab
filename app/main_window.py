@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from app.dialogs.report_history_dialog import ReportHistoryDialog
 from app.dialogs.report_preview_dialog import ReportPreviewDialog
+from app.dialogs.settings_dialog import SettingsDialog
 from app.engine.lab_report import LabReport
 from app.engine.medical_knowledge import MedicalKnowledge
 from app.engine.package_resolver import PackageResolver
@@ -402,6 +403,24 @@ class MainWindow(QMainWindow):
 
         logger.info("History loaded")
         return report
+
+    def open_settings(self) -> None:
+        """Open the Laboratory Settings dialog and reload settings on save.
+
+        The dialog edits and persists through the shared
+        :class:`SettingsManager` (the single source of truth). On accept, the
+        manager is reloaded so collaborators that read it -- notably the report
+        builder and PDF generator -- immediately see the new values. This method
+        builds no report and prints nothing.
+        """
+        dialog = SettingsDialog(self._settings_manager, self)
+
+        logger.info("Settings opened")
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._settings_manager.load()
+            logger.info("Settings updated")
+        else:
+            logger.info("Settings cancelled")
 
     def restore_report(self, report: LabReport) -> None:
         """Rebuild the entire UI from a loaded :class:`LabReport`.
