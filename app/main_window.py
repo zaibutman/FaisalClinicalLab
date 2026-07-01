@@ -8,6 +8,7 @@ behavior is implemented at this stage (Version 0.1.0).
 
 from __future__ import annotations
 
+import json
 import logging
 import tempfile
 from pathlib import Path
@@ -110,6 +111,8 @@ class MainWindow(QMainWindow):
         )
         # Persists a LabReport to disk as JSON (Task 012A).
         self._report_storage = ReportStorage()
+        # The most recently opened report becomes the current report (Task 012B).
+        self._current_report: LabReport | None = None
 
         # Wire test selection -> result widget insertion.
         self.test_panel.test_selected.connect(self._on_test_selected)
@@ -317,6 +320,162 @@ class MainWindow(QMainWindow):
             self, "Save Report", f"Report saved successfully:\n{saved}"
         )
         return saved
+
+    def open_report(self) -> LabReport | None:
+        """Open a saved report JSON and restore it into the application.
+
+        Opens a file dialog (defaulting to ``reports/``), loads the chosen file
+        via :class:`ReportStorage`, and rebuilds the UI through
+        :meth:`restore_report`. Returns the loaded report, or ``None`` on
+        cancel or error. Never raises -- failures are shown via a message box.
+        """
+        default_dir = self._report_storage.reports_dir
+        start = str(default_dir) if default_dir.exists() else ""
+
+        logger.info("Open dialog opened")
+        selected, _filter = QFileDialog.getOpenFileName(
+            self, "Open Report", start, "JSON Files (*.json)"
+        )
+        if not selected:
+            logger.info("Open cancelled")
+            return None
+
+        try:
+            report = self._report_storage.load(selected)
+            self.restore_report(report)
+        except (FileNotFoundError, OSError) as exc:
+            logger.warning("Open failed: %s", exc)
+            QMessageBox.critical(
+                self, "Open Report", f"The file could not be opened:\n{exc}"
+            )
+            return None
+        except (json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
+            logger.warning("Open failed: %s", exc)
+            QMessageBox.critical(
+                self, "Open Report", f"The file is not a valid report:\n{exc}"
+            )
+            return None
+        except Exception as exc:  # never crash on an unexpected error
+            logger.warning("Open failed: %s", exc)
+            QMessageBox.critical(
+                self, "Open Report", f"An unexpected error occurred:\n{exc}"
+            )
+            return None
+
+        logger.info("Report loaded")
+        return report
+
+    def restore_report(self, report: LabReport) -> None:
+        """Rebuild the entire UI from a loaded :class:`LabReport`.
+
+        This is the single restoration pipeline -- future features (Recent
+        Reports, History, Auto Recovery, Database) must reuse it. The report is
+        the sole source of truth: patient fields and every result widget are
+        populated verbatim from it. No reference flagging, unit lookup, or
+        package expansion happens here -- nothing is recalculated.
+        """
+        # Patient fields -- restored exactly as stored.
+        self.patient_panel.set_patient_data(report.patient.to_dict())
+
+        # Start from a clean results area and sidebar selection.
+        self._clear_result_area()
+        self.test_panel.clear_selection()
+
+        # Recreate each widget in the stored order and fill in its values.
+        for test_result in report.test_results:
+            widget = self._create_widget_from_result(test_result)
+            if widget is None:
+                logger.info(
+                    "No widget for type '%s' (test %s); skipped during restore",
+                    test_result.test_type, test_result.test_id,
+                )
+                continue
+            self._restore_widget_value(widget, test_result)
+            widget.removed.connect(self._on_widget_removed)
+            self.result_area.add_widget(widget)
+
+        # The loaded report becomes the current report.
+        self._current_report = report
+
+    # ── Restoration helpers (report is the only source of truth) ──────
+
+    def _clear_result_area(self) -> None:
+        """Remove every widget currently in the results area."""
+        for test_id in list(self.result_area._widgets.keys()):
+            self.result_area.remove_widget(test_id)
+
+    def _create_widget_from_result(self, test_result):
+        """Build a result widget for a stored ``TestResult`` via the factory.
+
+        The widget definition is assembled from the report itself (not the
+        catalog), so a report opens even if the test catalog has since changed.
+        Returns ``None`` for types the factory does not handle.
+        """
+        definition = {
+            "id": test_result.test_id,
+            "name": test_result.test_name,
+            "type": test_result.test_type,
+            "unit": test_result.unit,
+            "reference_range": self._range_display(test_result.reference_range),
+        }
+        return create_widget(definition)
+
+    def _restore_widget_value(self, widget, test_result) -> None:
+        """Populate ``widget`` from ``test_result.result`` exactly as stored.
+
+        Dispatches on the stored test type. The result is written straight into
+        each widget's inputs -- no value is recomputed or re-flagged.
+        """
+        test_type = test_result.test_type
+        result = test_result.result
+
+        if test_type == "numeric":
+            widget.result_edit.setText(self._as_text(result))
+        elif test_type == "dropdown":
+            self._select_combo_text(widget.result_combo, result)
+        elif test_type == "blood_group":
+            self._select_combo_text(widget.group_combo, result)
+        elif test_type in ("cbc", "semen", "sbr"):
+            if isinstance(result, dict):
+                for label, value in result.items():
+                    edit = widget._fields.get(label)
+                    if edit is not None:
+                        edit.setText(self._as_text(value))
+        elif test_type == "urine":
+            if isinstance(result, dict):
+                for section, fields in result.items():
+                    section_fields = widget._fields.get(section)
+                    if isinstance(fields, dict) and isinstance(section_fields, dict):
+                        for label, value in fields.items():
+                            edit = section_fields.get(label)
+                            if edit is not None:
+                                edit.setText(self._as_text(value))
+
+    @staticmethod
+    def _select_combo_text(combo, value) -> None:
+        """Select ``value`` in ``combo``, adding it if not already present."""
+        text = "" if value is None else str(value)
+        index = combo.findText(text, Qt.MatchFlag.MatchExactly)
+        if index < 0:
+            combo.addItem(text)
+            index = combo.findText(text, Qt.MatchFlag.MatchExactly)
+        combo.setCurrentIndex(index)
+
+    @staticmethod
+    def _as_text(value) -> str:
+        """Render a stored scalar value as widget text."""
+        return "" if value is None else str(value)
+
+    @staticmethod
+    def _range_display(reference_range) -> str:
+        """Reduce a stored reference range to a display string for a widget."""
+        if isinstance(reference_range, str):
+            return reference_range
+        if isinstance(reference_range, (list, tuple)):
+            for variant in reference_range:
+                if isinstance(variant, str) and variant.strip():
+                    return variant
+        return ""
 
     def _on_widget_removed(self, test_id: str) -> None:
         """Remove the result widget for ``test_id`` from the area."""
