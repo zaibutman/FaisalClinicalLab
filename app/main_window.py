@@ -15,6 +15,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
+    QDialog,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -24,12 +25,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.dialogs.report_history_dialog import ReportHistoryDialog
 from app.dialogs.report_preview_dialog import ReportPreviewDialog
 from app.engine.lab_report import LabReport
 from app.engine.medical_knowledge import MedicalKnowledge
 from app.engine.package_resolver import PackageResolver
 from app.engine.reference_engine import ReferenceEngine
 from app.engine.report_builder import ReportBuilder
+from app.engine.report_history import ReportHistory
 from app.engine.report_storage import ReportStorage
 from app.engine.settings_manager import SettingsManager
 from app.patient_panel import PatientPanel
@@ -363,6 +366,41 @@ class MainWindow(QMainWindow):
             return None
 
         logger.info("Report loaded")
+        return report
+
+    def open_report_history(self) -> LabReport | None:
+        """Browse saved reports and open the one the user selects.
+
+        Discovers every saved report via :class:`ReportHistory` (recursive,
+        metadata only), shows :class:`ReportHistoryDialog`, and -- on selection
+        -- loads the chosen file through the existing :class:`ReportStorage` and
+        rebuilds the UI via :meth:`restore_report`. No loading or restoration
+        logic is duplicated here. Returns the loaded report, or ``None`` on
+        cancel or error. Never raises.
+        """
+        history = ReportHistory(storage=self._report_storage)
+        dialog = ReportHistoryDialog(history.get_reports(), self)
+
+        logger.info("History opened")
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            logger.info("History cancelled")
+            return None
+
+        filepath = dialog.selected_filepath()
+        if not filepath:
+            logger.info("History cancelled")
+            return None
+
+        try:
+            report = self._report_storage.load(filepath)
+            self.restore_report(report)
+        except Exception as exc:  # never crash on a bad/removed report
+            QMessageBox.critical(
+                self, "Report History", f"The report could not be opened:\n{exc}"
+            )
+            return None
+
+        logger.info("History loaded")
         return report
 
     def restore_report(self, report: LabReport) -> None:
