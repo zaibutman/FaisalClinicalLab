@@ -83,13 +83,23 @@ class ReportBuilder:
 
     # ── Public API ────────────────────────────────────────────────────
 
-    def build(self, patient_data: dict, result_widgets: list) -> LabReport:
+    def build(
+        self,
+        patient_data: dict,
+        result_widgets: list,
+        report_id: str | None = None,
+    ) -> LabReport:
         """Build a complete :class:`LabReport` from the current state.
 
         Args:
             patient_data: The patient fields (e.g. from ``PatientPanel``).
             result_widgets: The live result widgets, in display order. Each
                 must expose ``test_id`` and a ``collect_data()`` method.
+            report_id: The report id to stamp on the report. When ``None`` a
+                fresh id is derived from the settings sequence via
+                :meth:`next_report_id`. The caller (MainWindow) passes an
+                existing id when re-saving an already-numbered report so no new
+                number is assigned. The counter is never advanced here.
 
         Returns:
             A fully populated :class:`LabReport`. No files are written, nothing
@@ -97,7 +107,7 @@ class ReportBuilder:
         """
         patient = PatientInfo.from_dict(patient_data)
         laboratory = self._settings_manager.get_laboratory_info()
-        report_info = self._build_report_info()
+        report_info = self._build_report_info(report_id)
 
         test_results = [
             self._build_test_result(widget, patient.gender)
@@ -114,10 +124,15 @@ class ReportBuilder:
 
     # ── Report metadata ───────────────────────────────────────────────
 
-    def _build_report_info(self) -> ReportInfo:
-        """Build the :class:`ReportInfo` for a freshly created report."""
+    def _build_report_info(self, report_id: str | None = None) -> ReportInfo:
+        """Build the :class:`ReportInfo`, using ``report_id`` when supplied.
+
+        A ``None`` id means a brand-new report, so the next id in the settings
+        sequence is derived. A supplied id is reused verbatim (re-saving an
+        already-numbered report).
+        """
         return ReportInfo(
-            report_id=self._next_report_id(),
+            report_id=report_id or self.next_report_id(),
             created_at=self._now(),
             printed_at=None,
             status="Pending",
@@ -125,12 +140,14 @@ class ReportBuilder:
             technician="",
         )
 
-    def _next_report_id(self) -> str:
+    def next_report_id(self) -> str:
         """Format the next report id from the current settings sequence.
 
-        Uses the existing ``report_prefix`` / ``report_counter`` settings. The
-        counter is read but not advanced or persisted here -- this task must
-        not save -- so the value reflects the next report to be created.
+        This is the single authority for the report-id format. It uses the
+        existing ``report_prefix`` / ``report_counter`` settings. The counter is
+        read but not advanced or persisted here -- advancing happens only in
+        MainWindow after a successful save -- so the value reflects the next
+        report to be created.
         """
         prefix = str(self._settings_manager.get("report_prefix", "RPT"))
         try:

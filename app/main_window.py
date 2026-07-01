@@ -236,7 +236,22 @@ class MainWindow(QMainWindow):
         # ResultArea exposes no public iterator yet; read its insertion-ordered
         # map directly to preserve the order tests were added in.
         result_widgets = list(self.result_area._widgets.values())
-        return self._report_builder.build(patient_data, result_widgets)
+        return self._report_builder.build(
+            patient_data, result_widgets, report_id=self._active_report_id()
+        )
+
+    def _active_report_id(self) -> str:
+        """Return the report id to stamp when building the current report.
+
+        Re-uses the id of the report already loaded/saved in this session
+        (:attr:`_current_report`) so that re-saving, previewing, or printing
+        never mints a new number. Only a brand-new composition (no current
+        report) gets the next id from the settings sequence -- and even then the
+        counter is not advanced until the save actually succeeds.
+        """
+        if self._current_report is not None:
+            return self._current_report.report_info.report_id
+        return self._report_builder.next_report_id()
 
     def preview_report(self) -> None:
         """Build the current report, render it to a temp PDF, and preview it.
@@ -284,8 +299,17 @@ class MainWindow(QMainWindow):
         defaulting to ``reports/`` with a generated filename. Returns the
         written path, or ``None`` if the user cancels. Never raises -- any
         filesystem error is reported via a message box.
+
+        Report numbering is automatic: a brand-new report is stamped with the
+        next id in the settings sequence, and the counter is advanced *only*
+        after the file is written successfully. Re-saving an already-numbered
+        report reuses its id and never advances the counter.
         """
+        # A brand-new composition has no current report; re-saving does.
+        is_new_report = self._current_report is None
         report = self.build_report()
+        if is_new_report:
+            logger.info("Report number assigned")
 
         default_dir = self._report_storage.reports_dir
         default_dir.mkdir(parents=True, exist_ok=True)
@@ -320,10 +344,35 @@ class MainWindow(QMainWindow):
             return None
 
         logger.info("Report saved: %s", saved.name)
+
+        # Save succeeded: this report is now the current report, so a later
+        # re-save reuses its id. Only a newly-numbered report advances the
+        # counter -- and only now, after a confirmed write, so a failed or
+        # cancelled save can never skip or duplicate a number.
+        self._current_report = report
+        if is_new_report:
+            self._advance_report_counter()
+
         QMessageBox.information(
             self, "Save Report", f"Report saved successfully:\n{saved}"
         )
         return saved
+
+    def _advance_report_counter(self) -> None:
+        """Persist the next report number after a successful new-report save.
+
+        Stores ``report_counter`` as the number just used (the report id was
+        formed from ``counter + 1``), so the next new report gets the following
+        number. Goes through the shared :class:`SettingsManager` -- the single
+        source of truth -- and never skips or reuses a value.
+        """
+        try:
+            counter = int(self._settings_manager.get("report_counter", 0))
+        except (TypeError, ValueError):
+            counter = 0
+        self._settings_manager.set("report_counter", counter + 1)
+        self._settings_manager.save()
+        logger.info("Report number advanced")
 
     def open_report(self) -> LabReport | None:
         """Open a saved report JSON and restore it into the application.
