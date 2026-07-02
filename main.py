@@ -42,14 +42,36 @@ def configure_logging() -> None:
 
 
 def center_window(window: MainWindow) -> None:
-    """Center ``window`` on the primary screen's available geometry."""
+    """Center ``window`` on the primary screen's available geometry.
+
+    If the window is larger than the available area (e.g. a 1400x850 default on
+    a 1366x768 laptop), it is first shrunk to fit so the native title bar is
+    never pushed off-screen, then clamped fully inside the work area. The
+    window stays resizable and maximizable.
+    """
     screen = QApplication.primaryScreen()
     if screen is None:
         return
     available = screen.availableGeometry()
+
+    # Shrink to fit the work area if the default size is too large for it,
+    # accounting for the window-frame decorations (title bar + borders) so the
+    # whole window fits and the native title bar stays fully reachable.
+    frame = window.frameGeometry()
+    deco_w = max(0, frame.width() - window.width())
+    deco_h = max(0, frame.height() - window.height())
+    fitted_w = min(window.width(), available.width() - deco_w)
+    fitted_h = min(window.height(), available.height() - deco_h)
+    if fitted_w != window.width() or fitted_h != window.height():
+        window.resize(fitted_w, fitted_h)
+
     frame = window.frameGeometry()
     frame.moveCenter(available.center())
-    window.move(frame.topLeft())
+    # Keep the whole frame (including the title bar) inside the work area.
+    top_left = frame.topLeft()
+    top_left.setX(max(available.left(), min(top_left.x(), available.right() - frame.width() + 1)))
+    top_left.setY(max(available.top(), min(top_left.y(), available.bottom() - frame.height() + 1)))
+    window.move(top_left)
 
 
 def main() -> int:
@@ -73,8 +95,10 @@ def main() -> int:
     window = MainWindow()
     if ICON_FILE.exists():
         window.setWindowIcon(QIcon(str(ICON_FILE)))
-    center_window(window)
+    # Show first so the window-frame decorations are realized, then fit/center
+    # using accurate frame geometry (keeps the native title bar fully on-screen).
     window.show()
+    center_window(window)
 
     exit_code = app.exec()
 

@@ -48,10 +48,13 @@ from app.widgets.widget_factory import create_widget
 
 logger = logging.getLogger(__name__)
 
-# Minimum shell geometry. The window is freely resizable and maximizable
-# above this floor -- it is a minimum, not a fixed size.
-_MIN_WINDOW_WIDTH: int = 1400
-_MIN_WINDOW_HEIGHT: int = 850
+# Preferred initial shell size. The minimum floor is kept small enough to fit
+# comfortably on a standard 1366x768 laptop screen, so the native title bar is
+# never pushed off-screen. The window stays freely resizable and maximizable.
+_DEFAULT_WINDOW_WIDTH: int = 1400
+_DEFAULT_WINDOW_HEIGHT: int = 850
+_MIN_WINDOW_WIDTH: int = 1024
+_MIN_WINDOW_HEIGHT: int = 640
 
 
 class MainWindow(QMainWindow):
@@ -72,7 +75,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(get_window_title())
-        self.resize(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT)
+        self.resize(_DEFAULT_WINDOW_WIDTH, _DEFAULT_WINDOW_HEIGHT)
         self.setMinimumSize(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT)
 
         self._build_ui()
@@ -163,11 +166,10 @@ class MainWindow(QMainWindow):
         Each button triggers an already-implemented MainWindow operation --
         the bar holds no business logic of its own. Left-side buttons start or
         open work; right-side buttons produce output from the current work.
-        Pinned to a fixed height so it never steals vertical space from the
-        results area as the window grows.
+        The bar sizes to its buttons and takes no stretch, so it never steals
+        vertical space from the results area as the window grows.
         """
         group = QGroupBox("Actions")
-        group.setFixedHeight(76)
         layout = QHBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
         layout.setSpacing(10)
