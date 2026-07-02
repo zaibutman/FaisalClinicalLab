@@ -1,0 +1,65 @@
+FAISAL CLINICAL LABORATORY
+LABORATORY INFORMATION SYSTEM - SOFTWARE LICENSE AGREEMENT
+
+Version 2.2.0
+
+IMPORTANT - READ CAREFULLY
+
+This Software License Agreement ("Agreement") is a legal agreement between you
+(the "Licensee", the laboratory owner or operator) and Faisal Clinical
+Laboratory ("Licensor") for the Faisal Clinical Laboratory Information System
+software product, including the executable program, bundled data files, and
+accompanying documentation (collectively, the "Software").
+
+By installing, copying, or otherwise using the Software, you agree to be bound
+by the terms of this Agreement. If you do not agree, do not install or use the
+Software.
+
+1. GRANT OF LICENSE
+   The Licensor grants the Licensee a non-exclusive, non-transferable license
+   to install and use the Software on computers owned or operated by the
+   Licensee for the purpose of preparing, storing, and printing laboratory
+   reports within the Licensee's laboratory.
+
+2. OWNERSHIP OF DATA
+   All patient information, test results, and reports created with the Software
+   are the sole property and responsibility of the Licensee. The Licensor does
+   not access, collect, or transmit any such data. The Software operates
+   entirely on the local computer.
+
+3. MEDICAL AND PROFESSIONAL RESPONSIBILITY
+   The Software is a tool for report preparation and record keeping. It does
+   not provide medical advice or diagnosis. The interpretation of results, the
+   correctness of reference ranges, and the clinical validity of every report
+   remain the exclusive responsibility of the qualified laboratory personnel
+   who review and authorize each report.
+
+4. RESTRICTIONS
+   The Licensee shall not reverse engineer, decompile, or disassemble the
+   Software, except to the extent expressly permitted by applicable law, nor
+   remove any proprietary notices from the Software.
+
+5. DATA BACKUP
+   The Licensee is responsible for maintaining regular backups of the reports
+   folder and configuration files. The Licensor is not responsible for any
+   loss of data.
+
+6. DISCLAIMER OF WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY AND
+   FITNESS FOR A PARTICULAR PURPOSE.
+
+7. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR SHALL NOT BE LIABLE FOR
+   ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF
+   OR INABILITY TO USE THE SOFTWARE.
+
+8. TERMINATION
+   This license remains in effect until terminated. It terminates automatically
+   if the Licensee breaches any term of this Agreement. Upon termination, the
+   Licensee must uninstall and destroy all copies of the Software.
+
+By continuing with this installation you acknowledge that you have read and
+understood this Agreement and agree to its terms.
+
+Faisal Clinical Laboratory
