@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QMessageBox,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -155,8 +157,11 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_actions_section(self) -> QGroupBox:
-        """Build the bottom 'Actions' container (empty for now).
+        """Build the bottom 'Actions' bar wiring the report operations.
 
+        Each button triggers an already-implemented MainWindow operation --
+        the bar holds no business logic of its own. Left-side buttons start or
+        open work; right-side buttons produce output from the current work.
         Pinned to a fixed height so it never steals vertical space from the
         results area as the window grows.
         """
@@ -164,7 +169,27 @@ class MainWindow(QMainWindow):
         group.setFixedHeight(76)
         layout = QHBoxLayout(group)
         layout.setContentsMargins(12, 18, 12, 12)
+        layout.setSpacing(10)
+
+        # Left: start a fresh report or reopen an existing one.
+        layout.addWidget(self._action_button("New Report", self.new_report))
+        layout.addWidget(self._action_button("Open Report", self.open_report))
+        layout.addWidget(self._action_button("History", self.open_report_history))
+
+        layout.addStretch(1)
+
+        # Right: produce output from the report currently on screen.
+        layout.addWidget(self._action_button("Preview", self.preview_report))
+        layout.addWidget(self._action_button("Save Report", self.save_report))
+        layout.addWidget(self._action_button("Settings", self.open_settings))
         return group
+
+    def _action_button(self, text: str, handler) -> QPushButton:
+        """Create an Actions-bar button wired to ``handler``."""
+        button = QPushButton(text)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.clicked.connect(handler)
+        return button
 
     def _on_test_selected(self, test_id: str) -> None:
         """Handle a sidebar click: add a single test, or expand a package.
@@ -224,6 +249,22 @@ class MainWindow(QMainWindow):
         widget.removed.connect(self._on_widget_removed)
         return self.result_area.add_widget(widget)
 
+    def new_report(self) -> None:
+        """Reset the workspace so the next save is numbered afresh.
+
+        Clears the patient fields, the results area, and the sidebar selection,
+        and forgets the current report. Forgetting :attr:`_current_report` is
+        what lets automatic numbering advance beyond the first report in a
+        single session: a subsequent save is then treated as brand-new and
+        draws the next id from the settings sequence. Reuses the existing
+        clear/restore helpers -- no new state handling is introduced.
+        """
+        self.patient_panel.clear()
+        self._clear_result_area()
+        self.test_panel.clear_selection()
+        self._current_report = None
+        logger.info("New report started")
+
     def build_report(self) -> LabReport:
         """Assemble a :class:`LabReport` from the current application state.
 
@@ -274,12 +315,55 @@ class MainWindow(QMainWindow):
 
             logger.info("Preview opened")
             dialog = ReportPreviewDialog(tmp_path, self)
+            # The dialog only signals intent; the surrounding app performs the
+            # save. Export the already-generated PDF -- never regenerate it.
+            default_pdf = Path(
+                self._report_storage.create_filename(report)
+            ).with_suffix(".pdf").name
+            dialog.save_requested.connect(
+                lambda src=tmp_path, name=default_pdf: self._export_preview_pdf(src, name)
+            )
             dialog.exec()
             logger.info("Preview closed")
         except Exception as exc:
             logger.warning("Preview failed: %s", exc)
         finally:
             self._delete_temp_pdf(tmp_path)
+
+    def _export_preview_pdf(self, source: Path, default_name: str) -> None:
+        """Save the previewed PDF to a user-chosen location.
+
+        Copies the already-generated preview PDF (``source``); it never
+        rebuilds the report or regenerates the file. Cancelling does nothing;
+        any filesystem error is reported via a message box rather than raising.
+        """
+        default_dir = self._report_storage.reports_dir
+        default_dir.mkdir(parents=True, exist_ok=True)
+
+        selected, _filter = QFileDialog.getSaveFileName(
+            self, "Save PDF", str(default_dir / default_name), "PDF Files (*.pdf)"
+        )
+        if not selected:
+            logger.info("PDF export cancelled")
+            return
+
+        target = Path(selected)
+        if target.suffix.lower() != ".pdf":
+            target = target.with_suffix(".pdf")
+
+        try:
+            shutil.copyfile(source, target)
+        except OSError as exc:
+            logger.warning("PDF export failed: %s", exc)
+            QMessageBox.critical(
+                self, "Save PDF", f"The PDF could not be saved:\n{exc}"
+            )
+            return
+
+        logger.info("PDF exported: %s", target.name)
+        QMessageBox.information(
+            self, "Save PDF", f"PDF saved successfully:\n{target}"
+        )
 
     @staticmethod
     def _delete_temp_pdf(tmp_path: Path | None) -> None:
