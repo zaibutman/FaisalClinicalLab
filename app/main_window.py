@@ -8,6 +8,7 @@ behavior is implemented at this stage (Version 0.1.0).
 
 from __future__ import annotations
 
+import gc
 import json
 import logging
 import shutil
@@ -304,6 +305,7 @@ class MainWindow(QMainWindow):
         emit signals (Task 011B).
         """
         tmp_path: Path | None = None
+        dialog: ReportPreviewDialog | None = None
         try:
             report = self.build_report()
 
@@ -328,6 +330,19 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             logger.warning("Preview failed: %s", exc)
         finally:
+            # The native QtPdf viewer keeps the previewed file open until its
+            # document object is destroyed -- closing the dialog is not enough,
+            # and on Windows that still-open handle blocks deletion of the temp
+            # PDF (leaving an orphan in the temp directory on every preview).
+            # Detach the dialog from its parent, drop the last reference, and
+            # force a collection so the handle is freed before we delete.
+            if dialog is not None:
+                try:
+                    dialog.setParent(None)
+                except Exception:
+                    pass
+            dialog = None
+            gc.collect()
             self._delete_temp_pdf(tmp_path)
 
     def _export_preview_pdf(self, source: Path, default_name: str) -> None:
