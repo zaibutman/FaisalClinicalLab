@@ -22,11 +22,13 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from app.paths import get_paths
+
 logger = logging.getLogger(__name__)
 
-# data/medical_knowledge.json lives at the project root (this file is in app/engine/).
-_DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent / "data"
-_KNOWLEDGE_FILE: Path = _DATA_DIR / "medical_knowledge.json"
+# medical_knowledge.json is a read-only bundled resource; the centralized helper
+# resolves data/ inside the install (Program Files) or the source tree.
+_KNOWLEDGE_FILE: Path = get_paths().data_dir / "medical_knowledge.json"
 
 
 class MedicalKnowledge:

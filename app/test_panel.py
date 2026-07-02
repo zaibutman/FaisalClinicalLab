@@ -27,13 +27,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.paths import get_paths
 from app.styles import PRIMARY
 
 logger = logging.getLogger(__name__)
 
-# data/tests.json lives at the project root (this file is in app/).
-_DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"
-_TESTS_FILE: Path = _DATA_DIR / "tests.json"
+# tests.json is a read-only bundled resource; the centralized helper resolves
+# data/ inside the install (Program Files) or the source tree.
+_TESTS_FILE: Path = get_paths().data_dir / "tests.json"
 
 _DEFAULT_CATEGORY: str = "Uncategorized"
 _EMPTY_MESSAGE: str = "No tests available."

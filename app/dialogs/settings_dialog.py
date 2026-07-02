@@ -37,9 +37,11 @@ from PySide6.QtWidgets import (
 )
 
 from app.engine.settings_manager import DEFAULT_SETTINGS, SettingsManager
+from app.paths import get_paths
 
-# Project root: this file is app/dialogs/settings_dialog.py.
-_PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
+# Read-only install/source root, used only to resolve user-picked logo and
+# signature image paths (never written to). From the centralized helper.
+_PROJECT_ROOT: Path = get_paths().application_dir
 
 # Theme display labels mapped to the values stored in settings.
 _THEMES: tuple[tuple[str, str], ...] = (

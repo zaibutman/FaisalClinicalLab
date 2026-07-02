@@ -25,11 +25,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.paths import get_paths
+
 logger = logging.getLogger(__name__)
 
-# data/doctors.json lives at the project root (this file is in app/).
-_DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"
-_DOCTORS_FILE: Path = _DATA_DIR / "doctors.json"
+# doctors.json is a read-only bundled resource; the centralized helper resolves
+# data/ inside the install (Program Files) or the source tree.
+_DOCTORS_FILE: Path = get_paths().data_dir / "doctors.json"
 
 _GENDERS: tuple[str, ...] = ("Male", "Female")
 _DEFAULT_DOCTOR: str = "Select Doctor"

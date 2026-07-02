@@ -18,12 +18,13 @@ import logging
 from pathlib import Path
 
 from app.engine.laboratory import LaboratoryInfo
+from app.paths import get_paths
 
 logger = logging.getLogger(__name__)
 
-# data/settings.json lives at the project root (this file is in app/engine/).
-_DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent / "data"
-_SETTINGS_FILE: Path = _DATA_DIR / "settings.json"
+# settings.json is user-writable, so it lives under %LOCALAPPDATA% (never in the
+# read-only install directory). The centralized helper is the single source.
+_SETTINGS_FILE: Path = get_paths().settings_file
 
 # Sensible placeholder defaults -- no real laboratory values are hardcoded.
 DEFAULT_SETTINGS: dict = {

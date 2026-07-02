@@ -11,7 +11,7 @@
 ; ============================================================================
 
 #define MyAppName "Faisal Clinical Laboratory"
-#define MyAppVersion "2.2.0"
+#define MyAppVersion "2.2.1"
 #define MyAppPublisher "Faisal Clinical Laboratory"
 #define MyAppExeName "FaisalClinicalLaboratory.exe"
 ; Source of the onedir build, relative to this .iss (installer\ -> project root).

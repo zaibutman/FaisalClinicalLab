@@ -17,11 +17,13 @@ import json
 import logging
 from pathlib import Path
 
+from app.paths import get_paths
+
 logger = logging.getLogger(__name__)
 
-# data/packages.json lives at the project root (this file is in app/engine/).
-_DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent / "data"
-_PACKAGES_FILE: Path = _DATA_DIR / "packages.json"
+# packages.json is a read-only bundled resource; the centralized helper resolves
+# data/ inside the install (Program Files) or the source tree.
+_PACKAGES_FILE: Path = get_paths().data_dir / "packages.json"
 
 # Default package -> ordered member test ids. Every id below exists in
 # data/tests.json; none are invented and none repeat within a package.

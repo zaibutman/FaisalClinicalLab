@@ -20,11 +20,13 @@ import logging
 from pathlib import Path
 
 from app.engine.lab_report import LabReport
+from app.paths import get_paths
 
 logger = logging.getLogger(__name__)
 
-# Default reports directory at the project root (this file is in app/engine/).
-_DEFAULT_REPORTS_DIR: Path = Path(__file__).resolve().parents[2] / "reports"
+# Saved reports are user-writable, so the default directory lives under
+# %LOCALAPPDATA% (never in the read-only install directory).
+_DEFAULT_REPORTS_DIR: Path = get_paths().reports_dir
 
 # Characters that are illegal in Windows filenames (a superset of POSIX's).
 _ILLEGAL_CHARS: str = '<>:"/\\|?*'

@@ -16,20 +16,22 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from app.main_window import MainWindow
+from app.paths import get_paths
 from app.styles import load_stylesheet
 from app.version import get_window_title
 
-# Project-relative paths.
-BASE_DIR: Path = Path(__file__).resolve().parent
-LOG_DIR: Path = BASE_DIR / "logs"
-LOG_FILE: Path = LOG_DIR / "application.log"
-ICON_FILE: Path = BASE_DIR / "assets" / "icon.ico"
+# All paths come from the centralized helper: writable data (logs) lives under
+# %LOCALAPPDATA%, read-only resources (the icon) load from the bundle/project.
+_PATHS = get_paths()
+LOG_DIR: Path = _PATHS.logs_dir
+LOG_FILE: Path = _PATHS.log_file
+ICON_FILE: Path = _PATHS.assets_dir / "icon.ico"
 
 logger = logging.getLogger(__name__)
 
 
 def configure_logging() -> None:
-    """Configure file-based logging to ``logs/application.log``."""
+    """Configure file-based logging to ``<LocalAppData>/logs/application.log``."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=str(LOG_FILE),
@@ -54,6 +56,11 @@ def main() -> int:
     """Run the application and return the Qt process exit code."""
     configure_logging()
     logger.info("Application started")
+
+    # One-time, non-destructive migration of settings/reports from an older
+    # beside-the-executable install into %LOCALAPPDATA%. Runs before any
+    # SettingsManager/ReportStorage is constructed so migrated data is loaded.
+    _PATHS.migrate_legacy_data()
 
     app = QApplication(sys.argv)
     app.setApplicationName(get_window_title())

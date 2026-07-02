@@ -43,6 +43,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.paths import get_paths
+
 if TYPE_CHECKING:  # type hints only -- no runtime coupling, no PySide6
     from app.engine.lab_report import LabReport
     from app.engine.laboratory import LaboratoryInfo
@@ -94,8 +96,9 @@ class PDFGenerator:
 
     def __init__(self, settings_manager: SettingsManager) -> None:
         self._settings = settings_manager
-        # Project ``data/`` directory, used to resolve relative asset paths.
-        self._data_dir = Path(__file__).resolve().parents[2] / "data"
+        # Read-only ``data/`` directory (bundled assets), from the centralized
+        # helper, used to resolve relative asset paths such as logos.
+        self._data_dir = get_paths().data_dir
 
     # ── Public API ────────────────────────────────────────────────────
 
